@@ -1,6 +1,7 @@
 if (process.env.NODE_ENV === 'development') {
   console.log('DEVELOPMENT');
 }
+require('dotenv').config();
 
 const createError = require('http-errors');
 const express = require('express');
@@ -8,11 +9,13 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const socketIO = require('socket.io');
 
 const { CLIENT_URL } = require('./config');
 const indexRouter = require('./routes/index');
 
 const app = express();
+app.io = socketIO();
 
 app.use(express.static('public'));
 app.get('/', function (req, res) {
@@ -33,6 +36,39 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use('/api', indexRouter);
+
+// socket
+app.io.on('connection', (socket) => {
+  console.log('socket connected : ', socket.id);
+
+  socket.on('enter room', (roomNo, user) => {
+    socket.join(roomNo);
+    const date = new Date().toString();
+    const message = {
+      text: `${user.name}님이 입장하셨습니다.`,
+      time: date.slice(16, 21),
+    };
+    app.io.to(roomNo).emit('anounce', message);
+  });
+
+  socket.on('typing', (roomNo, user) => {
+    socket.broadcast.to(roomNo).emit('who typing', user.name);
+  });
+
+  socket.on('send message', (roomNo, user, message) => {
+    app.io.to(roomNo).emit('receive message', user, message);
+  });
+
+  socket.on('out room', (roomNo, user) => {
+    socket.leave(roomNo);
+    const date = new Date().toString();
+    const message = {
+      text: `${user.name}님의 접속이 끊어졌습니다.`,
+      time: date.slice(16, 21),
+    };
+    app.io.to(roomNo).emit('anounce', message);
+  });
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
