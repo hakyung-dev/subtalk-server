@@ -1,7 +1,11 @@
 branch-defaults:
   master:
-    environment: null
+    environment: SubtalkServer-env
     group_suffix: null
+environment-defaults:
+  SubtalkServer-env:
+    branch: null
+    repository: null
 global:
   application_name: subtalk-server
   branch: null
