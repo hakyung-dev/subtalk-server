@@ -15,7 +15,6 @@ const { CLIENT_URL } = require('./config');
 const indexRouter = require('./routes/index');
 
 const app = express();
-app.io = socketIO();
 
 app.use(express.static('public'));
 app.get('/', function (req, res) {
@@ -29,6 +28,7 @@ const corsOptions = {
   credentials: true,
 };
 app.use(cors(corsOptions));
+app.io = socketIO();
 
 app.use(logger('dev'));
 app.use(express.json());
